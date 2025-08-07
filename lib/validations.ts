@@ -86,31 +86,34 @@ export const formDataSchema = z.object({
   mainObjective: z.enum(['presentation', 'leads', 'appointments', 'branding', 'other']),
   otherObjective: z.string().optional(),
   inspiringWebsites: z.string(),
-  launchDate: z.union([
-    z.date(),
-    z.string().transform((str) => {
-      if (!str || str === '' || str === 'null' || str === 'undefined') return null
-      const date = new Date(str)
-      if (isNaN(date.getTime())) return null
+  launchDate: z.any().transform((val) => {
+    console.log('Transform launchDate input:', val, 'type:', typeof val)
+    if (!val || val === '' || val === 'null' || val === 'undefined') {
+      return null
+    }
+    if (val instanceof Date) {
+      return val
+    }
+    if (typeof val === 'string') {
+      const date = new Date(val)
+      if (isNaN(date.getTime())) {
+        return null
+      }
       return date
-    }),
-    z.null()
-  ]).nullable(),
+    }
+    return null
+  }).nullable(),
   
   // Section 2
   hasLogo: z.enum(['yes', 'no']),
   logoFile: z.instanceof(File).optional(),
   colorPalette: z.string(),
   preferredTypography: z.string(),
-  graphicStyle: z.union([
-    z.array(z.string()),
-    z.string().transform((str) => [str]),
-    z.any().transform((val) => {
-      if (Array.isArray(val)) return val
-      if (typeof val === 'string') return [val]
-      return []
-    })
-  ]),
+  graphicStyle: z.any().transform((val) => {
+    if (Array.isArray(val)) return val
+    if (typeof val === 'string') return [val]
+    return []
+  }),
   otherGraphicStyle: z.string().optional(),
   visualReferences: z.string(),
   

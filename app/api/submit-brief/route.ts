@@ -29,12 +29,16 @@ export async function POST(request: NextRequest) {
         console.log('Added to graphicStyle array:', value)
       } else if (key === 'launchDate') {
         // Handle launch date - can be empty string, valid date string, or null
-        if (value === '' || value === 'null' || value === 'undefined') {
+        console.log('Processing launchDate - raw value:', value, 'type:', typeof value)
+        
+        if (value === '' || value === 'null' || value === 'undefined' || value === null) {
           formDataObj[key] = null
-          console.log('Launch date set to null')
+          console.log('Launch date set to null (empty/invalid)')
         } else {
           try {
             const date = new Date(value as string)
+            console.log('Date parsing result:', date, 'isValid:', !isNaN(date.getTime()))
+            
             if (isNaN(date.getTime())) {
               formDataObj[key] = null
               console.log('Invalid date format, set to null:', value)
@@ -64,7 +68,7 @@ export async function POST(request: NextRequest) {
     
     console.log('Final form data object:', JSON.stringify(formDataObj, null, 2))
     console.log('Graphic style type:', typeof formDataObj.graphicStyle, 'value:', formDataObj.graphicStyle)
-    console.log('Launch date type:', typeof formDataObj.launchDate, 'value:', formDataObj.launchDate)
+    console.log('Launch date type:', typeof formDataObj.launchDate, 'value:', formDataObj.launchDate, 'constructor:', formDataObj.launchDate?.constructor?.name)
     
     // Validate the form data using the formDataSchema
     console.log('Validating form data...')
