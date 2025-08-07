@@ -8,9 +8,7 @@ const nextConfig = {
   images: { unoptimized: true },
   
   // Configuration pour Vercel
-  experimental: {
-    serverComponentsExternalPackages: ['@supabase/supabase-js'],
-  },
+  serverExternalPackages: ['@supabase/supabase-js'],
   
   // Headers pour les API routes
   async headers() {

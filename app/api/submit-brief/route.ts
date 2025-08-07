@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { briefSchema } from '@/lib/validations'
+import { formDataSchema } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
   console.log('API submit-brief called')
@@ -48,9 +48,9 @@ export async function POST(request: NextRequest) {
     console.log('Graphic style:', formDataObj.graphicStyle)
     console.log('Launch date:', formDataObj.launchDate)
     
-    // Validate the form data
+    // Validate the form data using the formDataSchema
     console.log('Validating form data...')
-    const validatedData = briefSchema.parse(formDataObj)
+    const validatedData = formDataSchema.parse(formDataObj)
     console.log('Form data validated successfully')
     
     // Transform data for database
