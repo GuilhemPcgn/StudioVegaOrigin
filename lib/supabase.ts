@@ -133,6 +133,41 @@ export type Database = {
           updated_at?: string
         }
       }
+      files: {
+        Row: {
+          id: string
+          brief_id: string
+          file_name: string
+          original_name: string
+          file_url: string
+          file_type: string
+          file_size: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          brief_id: string
+          file_name: string
+          original_name: string
+          file_url: string
+          file_type: string
+          file_size: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          brief_id?: string
+          file_name?: string
+          original_name?: string
+          file_url?: string
+          file_type?: string
+          file_size?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }

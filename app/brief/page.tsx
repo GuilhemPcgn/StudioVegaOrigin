@@ -105,12 +105,26 @@ export default function BriefPage() {
   const onSubmit: SubmitHandler<BriefFormData> = async (data) => {
     setIsSubmitting(true)
     try {
+      const formData = new FormData()
+      
+      // Add all form data to FormData
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          if (Array.isArray(value)) {
+            value.forEach(item => formData.append(key, item))
+          } else if (value instanceof Date) {
+            formData.append(key, value.toISOString())
+          } else if (value instanceof FileList) {
+            Array.from(value).forEach(file => formData.append(key, file))
+          } else {
+            formData.append(key, String(value))
+          }
+        }
+      })
+
       const response = await fetch('/api/submit-brief', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+        body: formData,
       })
 
       if (response.ok) {

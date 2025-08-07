@@ -4,10 +4,30 @@ import { briefSchema } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const formData = await request.formData()
+    
+    // Extract form data
+    const formDataObj: any = {}
+    const entries = Array.from(formData.entries())
+    for (const [key, value] of entries) {
+      if (key === 'logoFile') {
+        formDataObj[key] = value
+      } else if (key === 'graphicStyle') {
+        if (!formDataObj[key]) formDataObj[key] = []
+        formDataObj[key].push(value)
+      } else if (key === 'launchDate' && value) {
+        formDataObj[key] = new Date(value as string)
+      } else if (key === 'numberOfPages') {
+        formDataObj[key] = parseInt(value as string, 10)
+      } else if (['videosAnimations', 'contactForm', 'multilingual', 'socialNetworks', 'interactiveMap', 'blog', 'analyticsTracking'].includes(key)) {
+        formDataObj[key] = value === 'true' || value === 'on'
+      } else {
+        formDataObj[key] = value
+      }
+    }
     
     // Validate the form data
-    const validatedData = briefSchema.parse(body)
+    const validatedData = briefSchema.parse(formDataObj)
     
     // Transform data for database
     const briefData = {
@@ -49,7 +69,7 @@ export async function POST(request: NextRequest) {
       cookie_policy: validatedData.cookiePolicy,
     }
 
-    const { data, error } = await supabase
+    const { data: brief, error } = await supabase
       .from('briefs')
       .insert([briefData])
       .select()
@@ -63,7 +83,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ success: true, brief: data })
+    // Handle file upload if logo file is provided
+    if (validatedData.logoFile && validatedData.hasLogo === 'yes') {
+      const file = validatedData.logoFile as File
+      const fileName = `${brief.id}_${Date.now()}_${file.name}`
+      
+      // Upload file to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(fileName, file)
+
+      if (uploadError) {
+        console.error('File upload error:', uploadError)
+        // Continue without file upload
+      } else {
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('logos')
+          .getPublicUrl(fileName)
+
+        // Save file record to database
+        await supabase
+          .from('files')
+          .insert([{
+            brief_id: brief.id,
+            file_name: fileName,
+            original_name: file.name,
+            file_url: urlData.publicUrl,
+            file_type: 'logo',
+            file_size: file.size
+          }])
+      }
+    }
+
+    return NextResponse.json({ success: true, brief })
   } catch (error) {
     console.error('API error:', error)
     return NextResponse.json(
