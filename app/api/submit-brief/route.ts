@@ -21,13 +21,23 @@ export async function POST(request: NextRequest) {
           console.log('Logo file found:', value.name, value.size)
         }
       } else if (key === 'graphicStyle') {
+        // Handle array of graphic styles
         if (!formDataObj[key]) formDataObj[key] = []
         formDataObj[key].push(value)
       } else if (key === 'launchDate' && value) {
-        formDataObj[key] = new Date(value as string)
+        // Convert string to Date object
+        try {
+          formDataObj[key] = new Date(value as string)
+        } catch (e) {
+          console.log('Invalid date format:', value)
+          formDataObj[key] = null
+        }
       } else if (key === 'numberOfPages') {
-        formDataObj[key] = parseInt(value as string, 10)
+        // Convert string to number
+        const num = parseInt(value as string, 10)
+        formDataObj[key] = isNaN(num) ? 1 : num
       } else if (['videosAnimations', 'contactForm', 'multilingual', 'socialNetworks', 'interactiveMap', 'blog', 'analyticsTracking'].includes(key)) {
+        // Convert string to boolean
         formDataObj[key] = value === 'true' || value === 'on'
       } else {
         formDataObj[key] = value
@@ -35,6 +45,8 @@ export async function POST(request: NextRequest) {
     }
     
     console.log('Form data extracted:', Object.keys(formDataObj))
+    console.log('Graphic style:', formDataObj.graphicStyle)
+    console.log('Launch date:', formDataObj.launchDate)
     
     // Validate the form data
     console.log('Validating form data...')
