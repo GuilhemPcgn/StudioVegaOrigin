@@ -7,13 +7,15 @@ export async function POST(request: NextRequest) {
   
   try {
     const formData = await request.formData()
-    console.log('FormData received, entries:', Array.from(formData.entries()).map(([key]) => key))
+    console.log('FormData received, entries:', Array.from(formData.entries()).map(([key, value]) => [key, typeof value, value instanceof File ? 'File' : value]))
     
     // Extract form data
     const formDataObj: any = {}
     const entries = Array.from(formData.entries())
     
     for (const [key, value] of entries) {
+      console.log(`Processing field: ${key}, type: ${typeof value}, value:`, value)
+      
       if (key === 'logoFile') {
         // Handle FileList - take the first file
         if (value instanceof File) {
@@ -24,29 +26,45 @@ export async function POST(request: NextRequest) {
         // Handle array of graphic styles
         if (!formDataObj[key]) formDataObj[key] = []
         formDataObj[key].push(value)
-      } else if (key === 'launchDate' && value) {
-        // Convert string to Date object
-        try {
-          formDataObj[key] = new Date(value as string)
-        } catch (e) {
-          console.log('Invalid date format:', value)
+        console.log('Added to graphicStyle array:', value)
+      } else if (key === 'launchDate') {
+        // Handle launch date - can be empty string, valid date string, or null
+        if (value === '' || value === 'null' || value === 'undefined') {
           formDataObj[key] = null
+          console.log('Launch date set to null')
+        } else {
+          try {
+            const date = new Date(value as string)
+            if (isNaN(date.getTime())) {
+              formDataObj[key] = null
+              console.log('Invalid date format, set to null:', value)
+            } else {
+              formDataObj[key] = date
+              console.log('Valid date created:', date)
+            }
+          } catch (e) {
+            console.log('Date parsing error, set to null:', e)
+            formDataObj[key] = null
+          }
         }
       } else if (key === 'numberOfPages') {
         // Convert string to number
         const num = parseInt(value as string, 10)
         formDataObj[key] = isNaN(num) ? 1 : num
+        console.log('NumberOfPages converted:', formDataObj[key])
       } else if (['videosAnimations', 'contactForm', 'multilingual', 'socialNetworks', 'interactiveMap', 'blog', 'analyticsTracking'].includes(key)) {
         // Convert string to boolean
         formDataObj[key] = value === 'true' || value === 'on'
+        console.log(`Boolean field ${key}:`, formDataObj[key])
       } else {
         formDataObj[key] = value
+        console.log(`Regular field ${key}:`, value)
       }
     }
     
-    console.log('Form data extracted:', Object.keys(formDataObj))
-    console.log('Graphic style:', formDataObj.graphicStyle)
-    console.log('Launch date:', formDataObj.launchDate)
+    console.log('Final form data object:', JSON.stringify(formDataObj, null, 2))
+    console.log('Graphic style type:', typeof formDataObj.graphicStyle, 'value:', formDataObj.graphicStyle)
+    console.log('Launch date type:', typeof formDataObj.launchDate, 'value:', formDataObj.launchDate)
     
     // Validate the form data using the formDataSchema
     console.log('Validating form data...')

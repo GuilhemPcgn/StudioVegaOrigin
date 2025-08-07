@@ -86,7 +86,16 @@ export const formDataSchema = z.object({
   mainObjective: z.enum(['presentation', 'leads', 'appointments', 'branding', 'other']),
   otherObjective: z.string().optional(),
   inspiringWebsites: z.string(),
-  launchDate: z.union([z.date(), z.string().transform((str) => new Date(str)), z.null()]).nullable(),
+  launchDate: z.union([
+    z.date(),
+    z.string().transform((str) => {
+      if (!str || str === '' || str === 'null' || str === 'undefined') return null
+      const date = new Date(str)
+      if (isNaN(date.getTime())) return null
+      return date
+    }),
+    z.null()
+  ]).nullable(),
   
   // Section 2
   hasLogo: z.enum(['yes', 'no']),
@@ -96,7 +105,11 @@ export const formDataSchema = z.object({
   graphicStyle: z.union([
     z.array(z.string()),
     z.string().transform((str) => [str]),
-    z.array(z.string()).transform((arr) => arr)
+    z.any().transform((val) => {
+      if (Array.isArray(val)) return val
+      if (typeof val === 'string') return [val]
+      return []
+    })
   ]),
   otherGraphicStyle: z.string().optional(),
   visualReferences: z.string(),
