@@ -10,7 +10,7 @@ export interface BriefFormData {
   
   // Section 2 - Visual Identity
   hasLogo: 'yes' | 'no'
-  logoFile?: FileList
+  logoFile?: File
   colorPalette: string
   preferredTypography: string
   graphicStyle: string[]

@@ -12,7 +12,7 @@ export const briefSchema = z.object({
   
   // Section 2
   hasLogo: z.enum(['yes', 'no']),
-  logoFile: z.any().optional(),
+  logoFile: z.instanceof(File).optional(),
   colorPalette: z.string(),
   preferredTypography: z.string(),
   graphicStyle: z.array(z.string()),

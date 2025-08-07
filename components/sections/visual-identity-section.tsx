@@ -67,7 +67,10 @@ export function VisualIdentitySection({ control, errors, watchedValues }: Visual
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => field.onChange(e.target.files)}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    field.onChange(file || undefined)
+                  }}
                   className="hidden"
                   id="logo-upload"
                 />

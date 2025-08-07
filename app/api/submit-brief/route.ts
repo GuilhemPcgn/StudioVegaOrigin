@@ -3,15 +3,23 @@ import { supabase } from '@/lib/supabase'
 import { briefSchema } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
+  console.log('API submit-brief called')
+  
   try {
     const formData = await request.formData()
+    console.log('FormData received, entries:', Array.from(formData.entries()).map(([key]) => key))
     
     // Extract form data
     const formDataObj: any = {}
     const entries = Array.from(formData.entries())
+    
     for (const [key, value] of entries) {
       if (key === 'logoFile') {
-        formDataObj[key] = value
+        // Handle FileList - take the first file
+        if (value instanceof File) {
+          formDataObj[key] = value
+          console.log('Logo file found:', value.name, value.size)
+        }
       } else if (key === 'graphicStyle') {
         if (!formDataObj[key]) formDataObj[key] = []
         formDataObj[key].push(value)
@@ -26,8 +34,12 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    console.log('Form data extracted:', Object.keys(formDataObj))
+    
     // Validate the form data
+    console.log('Validating form data...')
     const validatedData = briefSchema.parse(formDataObj)
+    console.log('Form data validated successfully')
     
     // Transform data for database
     const briefData = {
@@ -69,6 +81,7 @@ export async function POST(request: NextRequest) {
       cookie_policy: validatedData.cookiePolicy,
     }
 
+    console.log('Inserting brief into database...')
     const { data: brief, error } = await supabase
       .from('briefs')
       .insert([briefData])
@@ -78,47 +91,67 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Supabase error:', error)
       return NextResponse.json(
-        { error: 'Erreur lors de l\'enregistrement du brief' },
+        { error: 'Erreur lors de l\'enregistrement du brief', details: error.message },
         { status: 500 }
       )
     }
 
+    console.log('Brief inserted successfully:', brief.id)
+
     // Handle file upload if logo file is provided
     if (validatedData.logoFile && validatedData.hasLogo === 'yes') {
-      const file = validatedData.logoFile as File
-      const fileName = `${brief.id}_${Date.now()}_${file.name}`
-      
-      // Upload file to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('logos')
-        .upload(fileName, file)
-
-      if (uploadError) {
-        console.error('File upload error:', uploadError)
-        // Continue without file upload
-      } else {
-        // Get public URL
-        const { data: urlData } = supabase.storage
+      try {
+        console.log('Processing logo file upload...')
+        const file = validatedData.logoFile as File
+        const fileName = `${brief.id}_${Date.now()}_${file.name}`
+        
+        // Upload file to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
           .from('logos')
-          .getPublicUrl(fileName)
+          .upload(fileName, file)
 
-        // Save file record to database
-        await supabase
-          .from('files')
-          .insert([{
-            brief_id: brief.id,
-            file_name: fileName,
-            original_name: file.name,
-            file_url: urlData.publicUrl,
-            file_type: 'logo',
-            file_size: file.size
-          }])
+        if (uploadError) {
+          console.error('File upload error:', uploadError)
+          // Continue without file upload - don't fail the entire request
+        } else {
+          console.log('File uploaded successfully')
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from('logos')
+            .getPublicUrl(fileName)
+
+          // Save file record to database
+          await supabase
+            .from('files')
+            .insert([{
+              brief_id: brief.id,
+              file_name: fileName,
+              original_name: file.name,
+              file_url: urlData.publicUrl,
+              file_type: 'logo',
+              file_size: file.size
+            }])
+          console.log('File record saved to database')
+        }
+      } catch (fileError) {
+        console.error('File processing error:', fileError)
+        // Continue without file upload
       }
     }
 
+    console.log('API call completed successfully')
     return NextResponse.json({ success: true, brief })
   } catch (error) {
     console.error('API error:', error)
+    
+    // Return more detailed error information
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: 'Erreur de validation ou serveur', details: error.message },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Erreur de validation ou serveur' },
       { status: 400 }

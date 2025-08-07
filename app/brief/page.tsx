@@ -114,8 +114,8 @@ export default function BriefPage() {
             value.forEach(item => formData.append(key, item))
           } else if (value instanceof Date) {
             formData.append(key, value.toISOString())
-          } else if (value instanceof FileList) {
-            Array.from(value).forEach(file => formData.append(key, file))
+          } else if (value instanceof File) {
+            formData.append(key, value)
           } else {
             formData.append(key, String(value))
           }
@@ -128,15 +128,19 @@ export default function BriefPage() {
       })
 
       if (response.ok) {
+        const result = await response.json()
         success('Brief soumis avec succès !')
         setTimeout(() => {
           router.push('/brief/done')
         }, 1500)
       } else {
-        error('Erreur lors de la soumission du brief')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Submission error:', errorData)
+        error(`Erreur lors de la soumission du brief: ${errorData.details || errorData.error || 'Erreur inconnue'}`)
       }
     } catch (err) {
-      error('Erreur de connexion')
+      console.error('Network error:', err)
+      error('Erreur de connexion au serveur')
     } finally {
       setIsSubmitting(false)
     }
