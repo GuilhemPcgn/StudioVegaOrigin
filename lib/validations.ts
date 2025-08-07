@@ -103,9 +103,15 @@ export const formDataSchema = z.object({
   
   // Section 3
   numberOfPages: z.union([
-    z.number(),
-    z.string().transform((str) => parseInt(str, 10))
-  ]).min(1, 'Au moins 1 page requise'),
+    z.number().min(1, 'Au moins 1 page requise'),
+    z.string().transform((str) => {
+      const num = parseInt(str, 10)
+      if (isNaN(num) || num < 1) {
+        throw new Error('Au moins 1 page requise')
+      }
+      return num
+    })
+  ]),
   siteArchitecture: z.string(),
   textsReady: z.enum(['yes', 'we_write', 'you_write']),
   photosAvailable: z.enum(['yes', 'stock_images']),
