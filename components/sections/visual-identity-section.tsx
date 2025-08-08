@@ -69,18 +69,54 @@ export function VisualIdentitySection({ control, errors, watchedValues }: Visual
                   accept="image/*"
                   onChange={(e) => {
                     const file = e.target.files?.[0]
+                    if (file) {
+                      // Vérifier la taille du fichier (5MB max)
+                      if (file.size > 5 * 1024 * 1024) {
+                        alert('Le fichier est trop volumineux. Taille maximum : 5MB')
+                        e.target.value = '' // Reset l'input
+                        return
+                      }
+                      // Vérifier le type de fichier
+                      if (!file.type.startsWith('image/')) {
+                        alert('Veuillez sélectionner un fichier image valide')
+                        e.target.value = '' // Reset l'input
+                        return
+                      }
+                    }
                     field.onChange(file || undefined)
                   }}
                   className="hidden"
                   id="logo-upload"
                 />
                 <label htmlFor="logo-upload" className="cursor-pointer">
-                  <div className="text-white/70 mb-2">
-                    Cliquez pour uploader votre logo
-                  </div>
-                  <div className="text-white/40 text-sm">
-                    Formats acceptés: PNG, JPG, SVG (max 5MB)
-                  </div>
+                  {field.value ? (
+                    <div>
+                      <div className="text-green-400 mb-2 flex items-center justify-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Fichier sélectionné
+                      </div>
+                      <div className="text-white/70 mb-2 font-medium">
+                        {field.value.name}
+                      </div>
+                      <div className="text-white/40 text-sm">
+                        {Math.round(field.value.size / 1024)} KB
+                      </div>
+                      <div className="text-white/40 text-xs mt-2">
+                        Cliquez pour changer de fichier
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="text-white/70 mb-2">
+                        Cliquez pour uploader votre logo
+                      </div>
+                      <div className="text-white/40 text-sm">
+                        Formats acceptés: PNG, JPG, SVG (max 5MB)
+                      </div>
+                    </div>
+                  )}
                 </label>
               </div>
             )}

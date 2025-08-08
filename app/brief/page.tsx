@@ -135,11 +135,9 @@ export default function BriefPage() {
         }, 1500)
       } else {
         const errorData = await response.json().catch(() => ({}))
-        console.error('Submission error:', errorData)
         error(`Erreur lors de la soumission du brief: ${errorData.details || errorData.error || 'Erreur inconnue'}`)
       }
     } catch (err) {
-      console.error('Network error:', err)
       error('Erreur de connexion au serveur')
     } finally {
       setIsSubmitting(false)
@@ -217,6 +215,7 @@ export default function BriefPage() {
                 <div className="flex space-x-4">
                   {currentStep < TOTAL_STEPS ? (
                     <GradientButton
+                      key="next-button"
                       type="button"
                       onClick={nextStep}
                     >
@@ -224,6 +223,7 @@ export default function BriefPage() {
                     </GradientButton>
                   ) : (
                     <GradientButton
+                      key="submit-button"
                       type="submit"
                       disabled={isSubmitting}
                     >

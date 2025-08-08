@@ -6,6 +6,7 @@ import { FormSection } from '@/components/form/form-section'
 import { FormField } from '@/components/form/form-field'
 import { Input } from '@/components/form/input'
 import { Textarea } from '@/components/form/textarea'
+import { UrlPreviewList } from '@/components/form/url-preview-list'
 import { RadioGroup } from '@/components/form/radio-group'
 import { DatePicker } from '@/components/form/date-picker'
 import { Controller } from 'react-hook-form'
@@ -132,10 +133,10 @@ export function GeneralInfoSection({ control, errors, watchedValues }: GeneralIn
           name="inspiringWebsites"
           control={control}
           render={({ field }) => (
-            <Textarea 
-              {...field} 
-              placeholder="Partagez des URLs de sites qui vous inspirent ou de concurrents à analyser..."
-              error={!!errors.inspiringWebsites}
+            <UrlPreviewList
+              value={field.value || ''}
+              onChange={field.onChange}
+              placeholder="Collez une URL, appuyez sur Entrée. Plusieurs liens sont possibles."
             />
           )}
         />

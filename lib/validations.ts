@@ -12,7 +12,13 @@ export const briefSchema = z.object({
   
   // Section 2
   hasLogo: z.enum(['yes', 'no']),
-  logoFile: z.instanceof(File).optional(),
+  logoFile: z.instanceof(File).optional().refine((file) => {
+    if (!file) return true
+    return file.size <= 5 * 1024 * 1024 // 5MB max
+  }, 'Le fichier logo ne doit pas dépasser 5MB').refine((file) => {
+    if (!file) return true
+    return file.type.startsWith('image/')
+  }, 'Le fichier logo doit être une image'),
   colorPalette: z.string(),
   preferredTypography: z.string(),
   graphicStyle: z.array(z.string()),
@@ -87,7 +93,6 @@ export const formDataSchema = z.object({
   otherObjective: z.string().optional(),
   inspiringWebsites: z.string(),
   launchDate: z.any().transform((val) => {
-    console.log('Transform launchDate input:', val, 'type:', typeof val)
     if (!val || val === '' || val === 'null' || val === 'undefined') {
       return null
     }
@@ -106,7 +111,13 @@ export const formDataSchema = z.object({
   
   // Section 2
   hasLogo: z.enum(['yes', 'no']),
-  logoFile: z.instanceof(File).optional(),
+  logoFile: z.instanceof(File).optional().refine((file) => {
+    if (!file) return true
+    return file.size <= 5 * 1024 * 1024 // 5MB max
+  }, 'Le fichier logo ne doit pas dépasser 5MB').refine((file) => {
+    if (!file) return true
+    return file.type.startsWith('image/')
+  }, 'Le fichier logo doit être une image'),
   colorPalette: z.string(),
   preferredTypography: z.string(),
   graphicStyle: z.any().transform((val) => {

@@ -1,53 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import { formDataSchema } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
-  console.log('API submit-brief called')
   
   try {
     const formData = await request.formData()
-    console.log('FormData received, entries:', Array.from(formData.entries()).map(([key, value]) => [key, typeof value, value instanceof File ? 'File' : value]))
     
     // Extract form data
     const formDataObj: any = {}
     const entries = Array.from(formData.entries())
     
     for (const [key, value] of entries) {
-      console.log(`Processing field: ${key}, type: ${typeof value}, value:`, value)
       
       if (key === 'logoFile') {
         // Handle FileList - take the first file
         if (value instanceof File) {
           formDataObj[key] = value
-          console.log('Logo file found:', value.name, value.size)
+
         }
       } else if (key === 'graphicStyle') {
         // Handle array of graphic styles
         if (!formDataObj[key]) formDataObj[key] = []
         formDataObj[key].push(value)
-        console.log('Added to graphicStyle array:', value)
+
       } else if (key === 'launchDate') {
         // Handle launch date - can be empty string, valid date string, or null
-        console.log('Processing launchDate - raw value:', value, 'type:', typeof value)
         
         if (value === '' || value === 'null' || value === 'undefined' || value === null) {
           formDataObj[key] = null
-          console.log('Launch date set to null (empty/invalid)')
+
         } else {
           try {
             const date = new Date(value as string)
-            console.log('Date parsing result:', date, 'isValid:', !isNaN(date.getTime()))
             
             if (isNaN(date.getTime())) {
               formDataObj[key] = null
-              console.log('Invalid date format, set to null:', value)
+
             } else {
               formDataObj[key] = date
-              console.log('Valid date created:', date)
+
             }
           } catch (e) {
-            console.log('Date parsing error, set to null:', e)
+
             formDataObj[key] = null
           }
         }
@@ -55,25 +51,19 @@ export async function POST(request: NextRequest) {
         // Convert string to number
         const num = parseInt(value as string, 10)
         formDataObj[key] = isNaN(num) ? 1 : num
-        console.log('NumberOfPages converted:', formDataObj[key])
+
       } else if (['videosAnimations', 'contactForm', 'multilingual', 'socialNetworks', 'interactiveMap', 'blog', 'analyticsTracking'].includes(key)) {
         // Convert string to boolean
         formDataObj[key] = value === 'true' || value === 'on'
-        console.log(`Boolean field ${key}:`, formDataObj[key])
+
       } else {
         formDataObj[key] = value
-        console.log(`Regular field ${key}:`, value)
+
       }
     }
     
-    console.log('Final form data object:', JSON.stringify(formDataObj, null, 2))
-    console.log('Graphic style type:', typeof formDataObj.graphicStyle, 'value:', formDataObj.graphicStyle)
-    console.log('Launch date type:', typeof formDataObj.launchDate, 'value:', formDataObj.launchDate, 'constructor:', formDataObj.launchDate?.constructor?.name)
-    
     // Validate the form data using the formDataSchema
-    console.log('Validating form data...')
     const validatedData = formDataSchema.parse(formDataObj)
-    console.log('Form data validated successfully')
     
     // Transform data for database
     const briefData = {
@@ -115,7 +105,7 @@ export async function POST(request: NextRequest) {
       cookie_policy: validatedData.cookiePolicy,
     }
 
-    console.log('Inserting brief into database...')
+
     const { data: brief, error } = await supabase
       .from('briefs')
       .insert([briefData])
@@ -130,17 +120,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Brief inserted successfully:', brief.id)
+
 
     // Handle file upload if logo file is provided
     if (validatedData.logoFile && validatedData.hasLogo === 'yes') {
       try {
-        console.log('Processing logo file upload...')
+
         const file = validatedData.logoFile as File
         const fileName = `${brief.id}_${Date.now()}_${file.name}`
         
-        // Upload file to Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        // Upload file to Supabase Storage using admin client
+        const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
           .from('logos')
           .upload(fileName, file)
 
@@ -148,14 +138,14 @@ export async function POST(request: NextRequest) {
           console.error('File upload error:', uploadError)
           // Continue without file upload - don't fail the entire request
         } else {
-          console.log('File uploaded successfully')
+
           // Get public URL
-          const { data: urlData } = supabase.storage
+          const { data: urlData } = supabaseAdmin.storage
             .from('logos')
             .getPublicUrl(fileName)
 
-          // Save file record to database
-          await supabase
+          // Save file record to database using admin client
+          await supabaseAdmin
             .from('files')
             .insert([{
               brief_id: brief.id,
@@ -165,7 +155,7 @@ export async function POST(request: NextRequest) {
               file_type: 'logo',
               file_size: file.size
             }])
-          console.log('File record saved to database')
+
         }
       } catch (fileError) {
         console.error('File processing error:', fileError)
@@ -173,7 +163,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('API call completed successfully')
+
     return NextResponse.json({ success: true, brief })
   } catch (error) {
     console.error('API error:', error)
