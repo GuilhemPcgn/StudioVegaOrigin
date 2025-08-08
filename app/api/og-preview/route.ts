@@ -35,9 +35,12 @@ export async function POST(request: NextRequest) {
       waitUntil: 'load',
     })
 
-    const title = microlinkData.title || microlinkData.og?.title || null
+    // Type assertion to access og properties safely
+    const microlinkDataAny = microlinkData as any
+    
+    const title = microlinkData.title || microlinkDataAny.og?.title || null
     const description =
-      microlinkData.description || microlinkData.og?.description || null
+      microlinkData.description || microlinkDataAny.og?.description || null
     const image = (microlinkData.image?.url as string | undefined) || null
     const screenshot = (microlinkData.screenshot?.url as string | undefined) || null
 
